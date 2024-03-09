@@ -1,0 +1,68 @@
+- name: Install some packages
+  apt:
+    name:
+      - selinux-utils
+      - semanage-utils
+      - semodule-utils
+      - checkpolicy
+      - semanage-utils
+      - semodule-utils
+      - python3-sepolgen
+      - policycoreutils
+      - setools
+      - sepol-utils
+    state: present
+
+- name: Download some packages
+  get_url:
+    url: "{{item}}"
+    dest: /tmp/
+  with_items:
+    - http://ftp.de.debian.org/debian/pool/main/s/selinux-basics/selinux-basics_0.5.6_all.deb
+    - http://ftp.de.debian.org/debian/pool/main/r/refpolicy/selinux-policy-default_2.20190201-2_all.deb
+    - http://ftp.de.debian.org/debian/pool/main/s/selinux-python/policycoreutils-python-utils_2.8-3_all.deb
+    - http://ftp.de.debian.org/debian/pool/main/r/refpolicy/selinux-policy-src_2.20190201-2_all.deb
+    - http://ftp.de.debian.org/debian/pool/main/s/selinux-python/policycoreutils-dev_2.8-3_amd64.deb
+    - http://ftp.de.debian.org/debian/pool/main/r/refpolicy/selinux-policy-dev_2.20190201-2_all.deb
+
+- name: Install some packages via apt
+  shell: apt -y install /tmp/selinux-* /tmp/policy*
+
+- name: Install some packages via dpkg
+  shell: dpkg -i /tmp/selinux-* /tmp/policy*
+
+- name: Activate selinux
+  command: selinux-activate
+
+- name: Reboot after selinux activate
+  reboot:
+    reboot_timeout: 300
+
+- name: Create folder
+  file:
+    name: /etc/selinux/local
+    state: directory
+
+- name: Generate local policy
+  shell:
+    chdir: /etc/selinux/local
+    cmd: cat /var/log/audit/audit.log | audit2allow -M local
+
+- name: Load local policy
+  command:
+    chdir: /etc/selinux/local
+    cmd: semodule -i local.pp
+
+- name: Enforcing selinux
+  block:
+    - name: Enforcing selinux Line
+      lineinfile:
+        path: /etc/selinux/config
+        regexp: ^SELINUX=
+        line: SELINUX=enforcing
+        state: present
+      register: result
+    - name: Reboot after selinux activate
+      reboot:
+        reboot_timeout: 300
+      when: result.changed

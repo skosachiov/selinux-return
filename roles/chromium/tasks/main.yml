@@ -1,0 +1,19 @@
+- name: Selinux permissive
+  command: setenforce Permissive
+
+- name: Create user with password
+  user:
+    name: johnd
+    comment: John Doe
+    seuser: user_u
+
+- name: Copy sh file
+  copy:
+    dest: /home/johnd/chromium.sh
+    content: |
+      runcon -u user_u -r user_r -t user_t -l s0 chromium
+    mode: u+x
+    owner: johnd
+
+- name: Selinux enforcing
+  command: setenforce Enforcing

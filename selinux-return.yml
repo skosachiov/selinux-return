@@ -1,0 +1,6 @@
+---
+- hosts: all
+  roles:
+    #- role: kernel
+    #- role: policies
+    - role: chromium

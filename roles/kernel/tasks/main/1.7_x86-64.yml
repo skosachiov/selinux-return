@@ -1,0 +1,55 @@
+- name: Install some packages
+  apt:
+    name:
+      - vim
+      - bash-completion
+      - spice-vdagent
+      - qemu-guest-agent
+    state: present
+
+- name: Wget debian kernel
+  get_url:
+    url: 'http://ftp.de.debian.org/debian/pool/main/l/linux-signed-amd64/{{var_kernel_file}}'
+    dest: /tmp/
+  when: ansible_kernel != var_kernel_ver
+
+- name: Install kernel
+  command: dpkg -i /tmp/{{var_kernel_file}}
+  when: ansible_kernel != var_kernel_ver
+
+- name: Set default kernel grub
+  block:
+    - name: Set default kernel grub Grep
+      command: grep -P -o "gnulinux-{{var_kernel_ver}}[^\s]+advanced[^\s\']+" /boot/grub/grub.cfg
+      register: result
+    - name: Set default kernel grub Line
+      lineinfile:
+        path: /etc/default/grub
+        regexp: ^GRUB_DEFAULT
+        line: GRUB_DEFAULT={{result.stdout_lines[0]}}
+        state: present
+        insertafter: EOF
+      register: result
+    - name: Set default kernel grub Update grub
+      command: update-grub
+      when: result.changed
+    - name: Set default kernel grub Reboot
+      reboot:
+        reboot_timeout: 60
+      when: result.changed
+  when: ansible_kernel != var_kernel_ver
+
+- name: Install some packages
+  apt:
+    name:
+      - selinux-utils
+      - semanage-utils
+      - semodule-utils
+      - checkpolicy
+      - semanage-utils
+      - semodule-utils
+      - python3-sepolgen
+      - policycoreutils
+      - setools
+      - sepol-utils
+    state: present
