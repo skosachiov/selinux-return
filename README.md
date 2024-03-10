@@ -16,3 +16,9 @@ Automation of Selinux return to some rare national Linux distributions.
 `apt install ansible`
 
 `sshpass -p password ansible-playbook -v --ask-pass -e "ansible_become_password=password" -b -i 192.168.122.244, -u ansible selinux-return.yml`
+
+- logon
+- run some soft
+- logoff
+
+`sshpass -p password ansible-playbook -v --ask-pass -e "ansible_become_password=password" -b -i 192.168.122.244, -u ansible selinux-enforce.yml`

@@ -34,35 +34,19 @@
 - name: Activate selinux
   command: selinux-activate
 
-- name: Reboot after selinux activate
-  reboot:
-    reboot_timeout: 300
-
-- name: Create folder
-  file:
-    name: /etc/selinux/local
-    state: directory
-
-- name: Generate local policy
-  shell:
-    chdir: /etc/selinux/local
-    cmd: cat /var/log/audit/audit.log | audit2allow -M local
-
-- name: Load local policy
-  command:
-    chdir: /etc/selinux/local
-    cmd: semodule -i local.pp
-
-- name: Enforcing selinux
+- name: Set default kernel grub
   block:
-    - name: Enforcing selinux Line
+    - name: Set default kernel grub Line
       lineinfile:
-        path: /etc/selinux/config
-        regexp: ^SELINUX=
-        line: SELINUX=enforcing
+        path: /etc/default/grub
+        regexp: ^GRUB_CMDLINE_LINUX=
+        line: GRUB_CMDLINE_LINUX=" security=selinux enforce=0"
         state: present
       register: result
-    - name: Reboot after selinux activate
+    - name: Set default kernel grub Update grub
+      command: update-grub
+      when: result.changed
+    - name: Set default kernel grub Reboot
       reboot:
-        reboot_timeout: 300
+        reboot_timeout: 60
       when: result.changed

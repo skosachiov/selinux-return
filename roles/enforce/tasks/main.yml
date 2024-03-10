@@ -1,0 +1,28 @@
+- name: Create folder
+  file:
+    name: /etc/selinux/local
+    state: directory
+
+- name: Generate local policy
+  shell:
+    chdir: /etc/selinux/local
+    cmd: cat /var/log/audit/audit.log | audit2allow -M local
+
+- name: Load local policy
+  command:
+    chdir: /etc/selinux/local
+    cmd: semodule -i local.pp
+
+- name: Enforcing selinux
+  block:
+    - name: Enforcing selinux Line
+      lineinfile:
+        path: /etc/selinux/config
+        regexp: ^SELINUX=
+        line: SELINUX=enforcing
+        state: present
+      register: result
+    - name: Reboot after selinux activate
+      reboot:
+        reboot_timeout: 300
+      when: result.changed
